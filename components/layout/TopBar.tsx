@@ -5,9 +5,10 @@ import { Search, RefreshCcw, CheckCircle2, User } from "lucide-react";
 interface TopBarProps {
   onAnalyzeAgain: () => void;
   isAnalyzed: boolean;
+  onExport: () => void;
 }
 
-export default function TopBar({ onAnalyzeAgain, isAnalyzed }: TopBarProps) {
+export default function TopBar({ onAnalyzeAgain, isAnalyzed, onExport }: TopBarProps) {
   return (
     <header className="h-16 border-b border-white/[0.06] bg-[#09090B]/80 backdrop-blur-xl sticky top-0 z-40 px-6 flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1">
@@ -33,6 +34,12 @@ export default function TopBar({ onAnalyzeAgain, isAnalyzed }: TopBarProps) {
               <CheckCircle2 size={12} />
               Synced
             </div>
+            <button 
+              onClick={onExport}
+              className="flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white bg-[#111113] hover:bg-white/[0.05] border border-white/[0.06] px-3 py-1.5 rounded-md transition-all active:scale-[0.98]"
+            >
+              <span className="hidden sm:inline">Export</span>
+            </button>
             <button 
               onClick={onAnalyzeAgain}
               className="flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white bg-[#111113] hover:bg-white/[0.05] border border-white/[0.06] px-3 py-1.5 rounded-md transition-all active:scale-[0.98]"

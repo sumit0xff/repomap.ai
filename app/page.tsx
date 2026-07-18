@@ -8,14 +8,23 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Command, FolderTree, GitMerge, Compass } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import ParticleBackground from "@/components/features/ParticleBackground";
+import dynamic from "next/dynamic";
+
+const ParticleBackground = dynamic(() => import("@/components/features/ParticleBackground"), { 
+  ssr: false,
+});
+
+const ArchitecturePanel = dynamic(() => import("@/components/features/ArchitecturePanel"), {
+  ssr: false,
+  loading: () => <div className="p-8 text-center text-white/50 bg-[#111113] rounded-2xl border border-white/[0.06] animate-pulse h-96 flex items-center justify-center">Loading Architecture...</div>
+});
+
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import HeroSection from "@/components/features/HeroSection";
 import MetricCards from "@/components/features/MetricCards";
 import FileExplorer from "@/components/features/FileExplorer";
-import ArchitecturePanel from "@/components/features/ArchitecturePanel";
 import BeginnerGuide from "@/components/features/BeginnerGuide";
 import ReadmeSuggestions from "@/components/features/ReadmeSuggestions";
 import LoadingState from "@/components/ui/LoadingState";
@@ -92,6 +101,48 @@ export default function Home() {
     setError(null);
   };
 
+  const handleExport = () => {
+    if (!githubData || !analysisData) return;
+    
+    const repo = githubData.repository;
+    const ai = analysisData;
+    
+    const markdown = `# ${repo.owner}/${repo.repo} - RepoMap AI Analysis
+
+## Overview
+${ai.architecture.overview}
+
+## Architecture Flow
+\`\`\`mermaid
+${ai.mermaidDiagram}
+\`\`\`
+
+## Key Strengths
+${ai.codeQuality.strengths.map(s => `- ${s}`).join('\\n')}
+
+## Beginner Guide
+**Where to start:** ${ai.beginnerGuide.whereToStart}
+
+**Learning Path:**
+${ai.beginnerGuide.learningPath.map(s => `- ${s}`).join('\\n')}
+
+## Folder Explanations
+${ai.folderExplanations.map(f => `### ${f.folder}\\n${f.purpose}\\n`).join('\\n')}
+
+## README Suggestions
+${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
+`;
+    
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = "repomap-analysis.md";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const isAnalyzed = !!(githubData && analysisData);
 
   return (
@@ -151,11 +202,24 @@ export default function Home() {
               
               {error && (
                 <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-8 w-full p-6 rounded-2xl bg-[#111113] border border-red-500/20 shadow-2xl flex flex-col items-center text-center gap-4 relative overflow-hidden"
                 >
-                  {error}
+                  <div className="absolute inset-0 bg-red-500/5 mix-blend-screen" />
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2 z-10">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div className="z-10">
+                    <h3 className="text-lg font-medium text-white mb-2">Analysis Failed</h3>
+                    <p className="text-sm text-red-400/80 max-w-md">{error}</p>
+                  </div>
+                  <button 
+                    onClick={() => setError(null)}
+                    className="z-10 mt-2 px-5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-sm font-medium text-white transition-colors"
+                  >
+                    Dismiss
+                  </button>
                 </motion.div>
               )}
             </motion.div>
@@ -175,7 +239,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="flex-1 flex flex-col h-full z-10"
             >
-              <TopBar onAnalyzeAgain={resetState} isAnalyzed={true} />
+              <TopBar onAnalyzeAgain={resetState} isAnalyzed={true} onExport={handleExport} />
               
               <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-10 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 <div className="max-w-6xl mx-auto flex gap-10">
@@ -186,8 +250,17 @@ export default function Home() {
                     <div className="flex flex-col gap-6">
                       {activeTab === "overview" && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
-                          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.06]">
-                            <h2 className="text-xl font-semibold mb-4">Project Overview</h2>
+                          <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.06] relative group">
+                            <button 
+                              onClick={() => {
+                                navigator.clipboard.writeText(analysisData!.architecture.overview);
+                                // Optional: toast
+                              }}
+                              className="absolute top-4 right-4 p-2 rounded-md bg-white/[0.05] hover:bg-white/[0.1] opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                            <h2 className="text-xl font-semibold mb-4 pr-10">Project Overview</h2>
                             <p className="text-white/70 leading-relaxed">
                               {analysisData!.architecture.overview}
                             </p>
