@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LayoutDashboard, FolderTree, GitMerge, FileText, Compass, BookOpen, Settings, Zap } from "lucide-react";
+import { LayoutDashboard, FolderTree, GitMerge, FileText, Compass, Settings, Zap, Command } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -23,7 +23,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     <aside className="w-64 hidden md:flex flex-col border-r border-white/[0.06] bg-[#09090B] h-screen sticky top-0 flex-shrink-0 pt-6 px-4">
       <div className="flex items-center gap-2 px-2 mb-8">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#4d4da8] to-[#6b6bc6] flex items-center justify-center shadow-[0_0_15px_rgba(77,77,168,0.3)]">
-          <BookOpen size={16} className="text-white" />
+          <Command size={16} className="text-white" />
         </div>
         <span className="font-semibold text-white tracking-tight text-lg">RepoMap AI</span>
       </div>

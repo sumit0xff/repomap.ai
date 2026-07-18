@@ -1,16 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Command } from "lucide-react";
 
 export default function LoadingState() {
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-8 py-12 px-6">
       <div className="flex flex-col gap-4 items-center text-center mb-8">
         <motion.div 
-          animate={{ scale: [1, 1.05, 1], opacity: [0.5, 1, 0.5] }} 
+          animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }} 
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.08] mb-4"
-        />
+          className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#4d4da8] to-[#6b6bc6] flex items-center justify-center shadow-[0_0_30px_rgba(77,77,168,0.3)] mb-4"
+        >
+          <Command size={28} className="text-white" />
+        </motion.div>
         <h2 className="text-2xl font-medium text-white tracking-tight">Analyzing Repository</h2>
         <p className="text-white/40 text-sm max-w-md">
           Fetching repository data, normalizing tree structures, and generating AI insights. This takes a few moments.

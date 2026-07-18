@@ -19,7 +19,6 @@ import {
   ChevronDown, 
   Check, 
   ExternalLink, 
-  Code2, 
   Terminal, 
   Layers,
   Star,
@@ -28,10 +27,17 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const Github = (props: { size?: number, className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3 0 6-2 6-5.9 0-1.4-.5-2.5-1.4-3.4.1-.3.6-1.6-.1-3.4 0 0-1.2-.4-3.9 1.4a12.3 12.3 0 0 0-7 0C6 2 4.8 2.4 4.8 2.4c-.7 1.8-.2 3.1-.1 3.4-.9.9-1.4 2-1.4 3.4 0 3.9 3 5.9 6 5.9a4.8 4.8 0 0 0-1 3.2v4"/>
+    <path d="M9 18c-4.5 1.5-5-2.5-7-3"/>
+  </svg>
+);
+
 interface LandingPageProps {
   url: string;
   setUrl: (url: string) => void;
-  handleSubmit: (e?: React.FormEvent) => void;
+  handleSubmit: (e?: React.FormEvent, overrideUrl?: string) => void;
   loading: boolean;
   error: { title: string; description: string; action: string } | null;
   setError: (err: { title: string; description: string; action: string } | null) => void;
@@ -83,12 +89,12 @@ export default function LandingPage({
       scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
     setTimeout(() => {
-      inputRef.current?.focus();
+      handleSubmit(undefined, exampleUrl);
     }, 200);
   };
 
   const trustLogos = [
-    { name: "GitHub", icon: Code2 },
+    { name: "GitHub", icon: Github },
     { name: "React", icon: Layers },
     { name: "Next.js", icon: Terminal },
     { name: "Node.js", icon: Cpu },
@@ -178,8 +184,8 @@ export default function LandingPage({
       a: "For massive monorepos, our intelligent truncation algorithm prioritizes shallower directories, core configuration definitions, and essential entry points up to 2,500 items. This ensures the AI receives maximum architectural signal without exceeding context limits or sacrificing latency."
     },
     {
-      q: "Is RepoMap AI free to use during the hackathon demo?",
-      a: "Yes! You can test as many public GitHub repositories as you like during the launch window. Explore examples like Next.js, React, or TypeScript with a single click."
+      q: "Is RepoMap AI free to use?",
+      a: "Yes, currently RepoMap AI is completely free to use."
     }
   ];
 
@@ -251,14 +257,14 @@ export default function LandingPage({
 
       {/* HERO SECTION */}
       <section className="relative z-10 pt-16 md:pt-24 pb-20 px-6 md:px-12 max-w-7xl mx-auto flex flex-col items-start">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] mb-8 text-xs font-medium text-white/80 shadow-sm"
+          transition={{ duration: 0.8 }}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-medium text-white/70 mb-8"
         >
-          <span className="w-2 h-2 rounded-full bg-[#4d4da8] animate-pulse" />
-          <span>Hackathon MVP — Built for 4-Hour Codebase Mastery</span>
+          <div className="w-2 h-2 rounded-full bg-[#4d4da8] animate-pulse" />
+          <span>v1.0 Release — Built for Codebase Mastery</span>
         </motion.div>
 
         <motion.h1
@@ -789,7 +795,7 @@ export default function LandingPage({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                quote: "RepoMap AI saved me at least 3 days during our hackathon. I pasted a massive 5,000-file repository and instantly understood the module structure.",
+                quote: "RepoMap AI saved me so much time. I pasted a massive 5,000-file repository and instantly understood the module structure.",
                 name: "Alex Rivera",
                 role: "Senior Staff Software Engineer"
               },
@@ -913,8 +919,10 @@ export default function LandingPage({
             <a href="#faq" className="hover:text-white transition-colors">Terms</a>
           </div>
 
-          <div className="flex items-center gap-1 font-mono">
-            <span>Made with ❤️ for developers during the Hackathon.</span>
+          <div className="flex items-center gap-1.5 font-mono text-white/50">
+            <span>Built by <a href="https://github.com/sumit0xff" target="_blank" rel="noreferrer" className="text-white hover:text-white transition-colors underline decoration-white/30 underline-offset-4">Sumit Sukhralia</a></span>
+            <span className="px-1">•</span>
+            <span>Founder & Builder</span>
           </div>
         </div>
       </footer>

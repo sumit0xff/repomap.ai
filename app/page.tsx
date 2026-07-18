@@ -115,9 +115,14 @@ export default function Home() {
     };
   };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent, overrideUrl?: string) => {
     if (e) e.preventDefault();
-    if (loading || !url) return;
+    const targetUrl = overrideUrl || url;
+    if (loading || !targetUrl) return;
+    
+    if (overrideUrl && overrideUrl !== url) {
+      setUrl(overrideUrl);
+    }
 
     setError(null);
     setGithubData(null);
@@ -125,7 +130,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const { owner, repo } = parseGithubUrl(url);
+      const { owner, repo } = parseGithubUrl(targetUrl);
 
       const githubRes = await fetch("/api/github", {
         method: "POST",
@@ -241,7 +246,7 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
       </AnimatePresence>
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
-        {!isAnalyzed && !loading && (
+        {!isAnalyzed && (
           <div className="absolute inset-0 z-10">
             <LandingPage
               url={url}
@@ -257,11 +262,18 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
           </div>
         )}
 
-        {loading && (
-          <div className="absolute inset-0 overflow-auto z-10 bg-[#09090B]/80 backdrop-blur-sm">
-            <LoadingState />
-          </div>
-        )}
+        <AnimatePresence>
+          {loading && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-50 bg-[#09090B]/80 backdrop-blur-lg flex items-center justify-center overflow-hidden"
+            >
+              <LoadingState />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {isAnalyzed && !loading && (

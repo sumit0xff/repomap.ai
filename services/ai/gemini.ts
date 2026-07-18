@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { NormalizedGithubData } from "@/types/github";
 import { RepositoryAnalysis } from "@/types/analysis";
 import { buildAnalysisPrompt } from "./prompts";
@@ -14,69 +14,69 @@ export async function analyzeWithGemini(repositoryData: NormalizedGithubData): P
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         systemInstruction: "You are a senior software architect. Output ONLY valid JSON matching the schema provided.",
         responseMimeType: "application/json",
         responseSchema: {
-          type: "OBJECT",
+          type: Type.OBJECT,
           properties: {
             summary: {
-              type: "OBJECT",
+              type: Type.OBJECT,
               properties: {
-                title: { type: "STRING" },
-                description: { type: "STRING" },
-                projectType: { type: "STRING" },
-                primaryLanguage: { type: "STRING" },
-                difficulty: { type: "STRING" }
+                title: { type: Type.STRING },
+                description: { type: Type.STRING },
+                projectType: { type: Type.STRING },
+                primaryLanguage: { type: Type.STRING },
+                difficulty: { type: Type.STRING }
               },
               required: ["title", "description", "projectType", "primaryLanguage", "difficulty"]
             },
             architecture: {
-              type: "OBJECT",
+              type: Type.OBJECT,
               properties: {
-                overview: { type: "STRING" },
-                patterns: { type: "ARRAY", items: { type: "STRING" } },
-                importantDirectories: { type: "ARRAY", items: { type: "STRING" } }
+                overview: { type: Type.STRING },
+                patterns: { type: Type.ARRAY, items: { type: Type.STRING } },
+                importantDirectories: { type: Type.ARRAY, items: { type: Type.STRING } }
               },
               required: ["overview", "patterns", "importantDirectories"]
             },
             folderExplanations: {
-              type: "ARRAY",
+              type: Type.ARRAY,
               items: {
-                type: "OBJECT",
+                type: Type.OBJECT,
                 properties: {
-                  folder: { type: "STRING" },
-                  purpose: { type: "STRING" },
-                  importance: { type: "STRING" }
+                  folder: { type: Type.STRING },
+                  purpose: { type: Type.STRING },
+                  importance: { type: Type.STRING }
                 },
                 required: ["folder", "purpose", "importance"]
               }
             },
             beginnerGuide: {
-              type: "OBJECT",
+              type: Type.OBJECT,
               properties: {
-                whereToStart: { type: "STRING" },
-                learningPath: { type: "ARRAY", items: { type: "STRING" } },
-                recommendedReadingOrder: { type: "ARRAY", items: { type: "STRING" } }
+                whereToStart: { type: Type.STRING },
+                learningPath: { type: Type.ARRAY, items: { type: Type.STRING } },
+                recommendedReadingOrder: { type: Type.ARRAY, items: { type: Type.STRING } }
               },
               required: ["whereToStart", "learningPath", "recommendedReadingOrder"]
             },
             codeQuality: {
-              type: "OBJECT",
+              type: Type.OBJECT,
               properties: {
-                strengths: { type: "ARRAY", items: { type: "STRING" } },
-                possibleIssues: { type: "ARRAY", items: { type: "STRING" } },
-                maintainabilityScore: { type: "NUMBER" }
+                strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                possibleIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
+                maintainabilityScore: { type: Type.NUMBER }
               },
               required: ["strengths", "possibleIssues", "maintainabilityScore"]
             },
             readmeSuggestions: {
-              type: "ARRAY",
-              items: { type: "STRING" }
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
             },
-            mermaidDiagram: { type: "STRING" }
+            mermaidDiagram: { type: Type.STRING }
           },
           required: [
             "summary",
