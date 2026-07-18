@@ -74,20 +74,21 @@ export default function ArchitecturePanel({ diagram }: ArchitecturePanelProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-black/20">
         <h3 className="text-sm font-medium text-white/90">Architecture Flow</h3>
         <div className="flex items-center gap-1">
-          <button onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5">
+          <button aria-label="Zoom out" onClick={() => setZoom(z => Math.max(0.5, z - 0.1))} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5">
             <ZoomOut size={16} />
           </button>
-          <button onClick={() => setZoom(z => Math.min(2, z + 0.1))} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5">
+          <button aria-label="Zoom in" onClick={() => setZoom(z => Math.min(2, z + 0.1))} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5">
             <ZoomIn size={16} />
           </button>
           <div className="w-[1px] h-4 bg-white/10 mx-1" />
-          <button onClick={handleCopy} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5" title="Copy Source">
+          <button aria-label="Copy Mermaid" onClick={handleCopy} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5 flex items-center gap-1" title="Copy Source">
             {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+            {copied && <span className="text-xs text-green-400 pr-1">Copied</span>}
           </button>
-          <button onClick={handleExport} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5" title="Export SVG">
+          <button aria-label="Export Markdown" onClick={handleExport} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5" title="Export SVG">
             <Download size={16} />
           </button>
-          <button onClick={() => setIsFullscreen(!isFullscreen)} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5 ml-1" title="Toggle Fullscreen">
+          <button aria-label="Toggle Fullscreen" onClick={() => setIsFullscreen(!isFullscreen)} className="p-1.5 text-white/50 hover:text-white transition-colors rounded-md hover:bg-white/5 ml-1" title="Toggle Fullscreen">
             <Maximize2 size={16} />
           </button>
         </div>

@@ -6,9 +6,11 @@ interface TopBarProps {
   onAnalyzeAgain: () => void;
   isAnalyzed: boolean;
   onExport: () => void;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
-export default function TopBar({ onAnalyzeAgain, isAnalyzed, onExport }: TopBarProps) {
+export default function TopBar({ onAnalyzeAgain, isAnalyzed, onExport, searchTerm, onSearchChange }: TopBarProps) {
   return (
     <header className="h-16 border-b border-white/[0.06] bg-[#09090B]/80 backdrop-blur-xl sticky top-0 z-40 px-6 flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1">
@@ -17,6 +19,8 @@ export default function TopBar({ onAnalyzeAgain, isAnalyzed, onExport }: TopBarP
           <input 
             type="text" 
             placeholder="Search repository..." 
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="w-full h-9 pl-9 pr-4 bg-[#111113] border border-white/[0.06] rounded-md text-sm text-white outline-none focus:border-white/[0.15] transition-all placeholder:text-white/20"
             disabled={!isAnalyzed}
           />
@@ -50,7 +54,7 @@ export default function TopBar({ onAnalyzeAgain, isAnalyzed, onExport }: TopBarP
             <div className="w-[1px] h-6 bg-white/[0.06]" />
           </>
         )}
-        <button className="w-8 h-8 rounded-full bg-[#111113] border border-white/[0.08] flex items-center justify-center text-white/50 hover:text-white transition-colors">
+        <button aria-label="User profile" className="w-8 h-8 rounded-full bg-[#111113] border border-white/[0.08] flex items-center justify-center text-white/50 hover:text-white transition-colors">
           <User size={14} />
         </button>
       </div>

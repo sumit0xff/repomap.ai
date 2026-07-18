@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { parseGithubUrl } from "@/lib/github-parser";
 import { NormalizedGithubData } from "@/types/github";
 import { RepositoryAnalysis } from "@/types/analysis";
@@ -32,12 +32,87 @@ import LoadingState from "@/components/ui/LoadingState";
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{title: string, description: string, action: string} | null>(null);
   
   const [githubData, setGithubData] = useState<NormalizedGithubData | null>(null);
   const [analysisData, setAnalysisData] = useState<RepositoryAnalysis | null>(null);
   
   const [activeTab, setActiveTab] = useState("overview");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [recentRepos, setRecentRepos] = useState<string[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("recentRepos");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setTimeout(() => {
+          setRecentRepos(parsed);
+          if (parsed.length > 0 && !url) {
+            setUrl(parsed[0]);
+          }
+        }, 0);
+      }
+    } catch {
+      // ignore
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveRecentRepo = (repoUrl: string) => {
+    try {
+      const updated = [repoUrl, ...recentRepos.filter(r => r !== repoUrl)].slice(0, 5);
+      setRecentRepos(updated);
+      localStorage.setItem("recentRepos", JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
+
+  const parseErrorMessage = (msg: string) => {
+    if (msg.includes("404") || msg.includes("not found")) {
+      return {
+        title: "Repository not found",
+        description: "We couldn't find a public GitHub repository at that URL. Make sure it's not private or deleted.",
+        action: "Check the URL"
+      };
+    }
+    if (msg.includes("403") || msg.includes("rate limit")) {
+      return {
+        title: "Rate Limit Exceeded",
+        description: "GitHub API rate limit reached. Please try again later or provide a smaller repository.",
+        action: "Try again later"
+      };
+    }
+    if (msg.includes("Failed to fetch") || msg.includes("Network")) {
+      return {
+        title: "Network Failure",
+        description: "Unable to connect to the server. Please check your internet connection.",
+        action: "Retry connection"
+      };
+    }
+    if (msg.includes("analyze") || msg.includes("OpenAI") || msg.includes("timeout")) {
+      return {
+        title: "AI Engine Unavailable",
+        description: "The AI engine took too long to respond or is currently experiencing issues.",
+        action: "Try again"
+      };
+    }
+    if (msg.includes("Invalid GitHub URL")) {
+      return {
+        title: "Invalid URL format",
+        description: "Please provide a valid public GitHub repository URL.",
+        action: "Check the URL"
+      };
+    }
+    return {
+      title: "Analysis Failed",
+      description: msg,
+      action: "Dismiss"
+    };
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -76,12 +151,14 @@ export default function Home() {
 
       setAnalysisData(aiData.analysis);
       setActiveTab("overview");
+      saveRecentRepo(url);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "An unexpected error occurred.");
+        setError(parseErrorMessage(err.message));
       } else {
-        setError("An unexpected error occurred.");
+        setError(parseErrorMessage("An unexpected error occurred."));
       }
+      setTimeout(() => inputRef.current?.focus(), 100);
     } finally {
       setLoading(false);
     }
@@ -182,6 +259,7 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
 
               <form onSubmit={handleSubmit} className="w-full relative group">
                 <input
+                  ref={inputRef}
                   type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
@@ -194,11 +272,56 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
                 <button
                   type="submit"
                   disabled={loading || !url}
-                  className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                  aria-label="Analyze repository"
                 >
-                  Analyze
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  ) : (
+                    "Analyze"
+                  )}
                 </button>
               </form>
+              
+              <div className="w-full mt-6 flex flex-col sm:flex-row items-start justify-between gap-6 text-sm">
+                {recentRepos.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-white/40 font-medium">Recent</span>
+                    <div className="flex flex-wrap gap-2">
+                      {recentRepos.map((r, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setUrl(r)}
+                          className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-white/70 hover:text-white transition-colors"
+                        >
+                          {r.replace("https://github.com/", "")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex flex-col gap-2">
+                  <span className="text-white/40 font-medium">Try Examples</span>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { name: "React", url: "https://github.com/facebook/react" },
+                      { name: "Next.js", url: "https://github.com/vercel/next.js" },
+                      { name: "TypeScript", url: "https://github.com/microsoft/TypeScript" },
+                      { name: "Tailwind CSS", url: "https://github.com/tailwindlabs/tailwindcss" },
+                      { name: "OpenAI", url: "https://github.com/openai/openai-node" },
+                    ].map((ex, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setUrl(ex.url)}
+                        className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[#4d4da8] hover:text-[#6b6bc6] transition-colors"
+                      >
+                        {ex.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
               
               {error && (
                 <motion.div 
@@ -211,14 +334,14 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
                     <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </div>
                   <div className="z-10">
-                    <h3 className="text-lg font-medium text-white mb-2">Analysis Failed</h3>
-                    <p className="text-sm text-red-400/80 max-w-md">{error}</p>
+                    <h3 className="text-lg font-medium text-white mb-2">{error.title}</h3>
+                    <p className="text-sm text-red-400/80 max-w-md">{error.description}</p>
                   </div>
                   <button 
                     onClick={() => setError(null)}
                     className="z-10 mt-2 px-5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-sm font-medium text-white transition-colors"
                   >
-                    Dismiss
+                    {error.action || "Dismiss"}
                   </button>
                 </motion.div>
               )}
@@ -239,7 +362,13 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
               animate={{ opacity: 1, y: 0 }}
               className="flex-1 flex flex-col h-full z-10"
             >
-              <TopBar onAnalyzeAgain={resetState} isAnalyzed={true} onExport={handleExport} />
+              <TopBar 
+                onAnalyzeAgain={resetState} 
+                isAnalyzed={true} 
+                onExport={handleExport} 
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+              />
               
               <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-10 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 <div className="max-w-6xl mx-auto flex gap-10">
@@ -252,13 +381,19 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
                           <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.06] relative group">
                             <button 
+                              aria-label="Copy overview"
                               onClick={() => {
                                 navigator.clipboard.writeText(analysisData!.architecture.overview);
-                                // Optional: toast
+                                const btn = document.getElementById("copy-overview-btn");
+                                if (btn) {
+                                  btn.innerText = "Copied!";
+                                  setTimeout(() => btn.innerText = "Copy", 2000);
+                                }
                               }}
-                              className="absolute top-4 right-4 p-2 rounded-md bg-white/[0.05] hover:bg-white/[0.1] opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-4 right-4 px-2 py-1 text-xs rounded-md bg-white/[0.05] hover:bg-white/[0.1] opacity-0 group-hover:opacity-100 transition-opacity text-white/50 hover:text-white"
+                              id="copy-overview-btn"
                             >
-                              <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                              Copy
                             </button>
                             <h2 className="text-xl font-semibold mb-4 pr-10">Project Overview</h2>
                             <p className="text-white/70 leading-relaxed">
@@ -295,7 +430,7 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
 
                       {activeTab === "explorer" && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                          <FileExplorer tree={githubData!.tree} />
+                          <FileExplorer tree={githubData!.tree} searchTerm={searchTerm} />
                         </motion.div>
                       )}
 
@@ -313,7 +448,7 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
 
                       {activeTab === "readme" && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                          <ReadmeSuggestions suggestions={analysisData!.readmeSuggestions} />
+                          <ReadmeSuggestions suggestions={analysisData!.readmeSuggestions} searchTerm={searchTerm} />
                         </motion.div>
                       )}
 
@@ -321,17 +456,31 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
                            <div className="p-6 rounded-2xl bg-[#111113] border border-white/[0.06]">
                             <h2 className="text-xl font-semibold mb-4">Folder Explanations</h2>
-                            <div className="flex flex-col gap-4">
-                              {analysisData!.folderExplanations.map((f, i) => (
-                                <div key={i} className="flex flex-col p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="font-mono text-sm font-semibold text-[#4d4da8]">{f.folder}</span>
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.05] text-white/50">{f.importance}</span>
+                            {searchTerm && analysisData!.folderExplanations.filter(f => f.folder.toLowerCase().includes(searchTerm.toLowerCase()) || f.purpose.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+                              <div className="text-center py-10 text-white/40">No matching files found.</div>
+                            ) : (
+                              <div className="flex flex-col gap-4">
+                                {analysisData!.folderExplanations
+                                  .filter(f => !searchTerm || f.folder.toLowerCase().includes(searchTerm.toLowerCase()) || f.purpose.toLowerCase().includes(searchTerm.toLowerCase()))
+                                  .map((f, i) => (
+                                  <div key={i} className="flex flex-col p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                                    <div className="flex justify-between items-center mb-2">
+                                      <span className="font-mono text-sm font-semibold text-[#4d4da8]">
+                                        {searchTerm ? (
+                                          <span dangerouslySetInnerHTML={{__html: f.folder.replace(new RegExp(`(${searchTerm})`, 'gi'), '<span class="bg-yellow-500/30 text-yellow-200 rounded-sm px-0.5">$1</span>')}} />
+                                        ) : f.folder}
+                                      </span>
+                                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.05] text-white/50">{f.importance}</span>
+                                    </div>
+                                    <p className="text-sm text-white/70 leading-relaxed">
+                                      {searchTerm ? (
+                                        <span dangerouslySetInnerHTML={{__html: f.purpose.replace(new RegExp(`(${searchTerm})`, 'gi'), '<span class="bg-yellow-500/30 text-yellow-200 rounded-sm px-0.5">$1</span>')}} />
+                                      ) : f.purpose}
+                                    </p>
                                   </div>
-                                  <p className="text-sm text-white/70 leading-relaxed">{f.purpose}</p>
-                                </div>
-                              ))}
-                            </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </motion.div>
                       )}
@@ -364,6 +513,7 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
+                aria-label={`Open ${item.id} tab`}
                 className={cn(
                   "p-3 rounded-xl transition-all",
                   activeTab === item.id ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white/70"
