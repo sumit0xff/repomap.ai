@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { parseGithubUrl } from "@/lib/github-parser";
-import { NormalizedGithubData } from "@/types/github";
+import { RepositoryAnalysis } from "@/types/analysis";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successData, setSuccessData] = useState<NormalizedGithubData | null>(null);
+  const [analysisData, setAnalysisData] = useState<RepositoryAnalysis | null>(null);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) {
@@ -18,25 +18,39 @@ export default function Home() {
     if (loading) return;
 
     setError(null);
-    setSuccessData(null);
+    setAnalysisData(null);
     setLoading(true);
 
     try {
       const { owner, repo } = parseGithubUrl(url);
 
-      const response = await fetch("/api/github", {
+      // 1. Fetch normalized repository data
+      const githubRes = await fetch("/api/github", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ owner, repo }),
       });
 
-      const data = await response.json();
+      const githubData = await githubRes.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Failed to fetch repository data.");
+      if (!githubRes.ok || !githubData.success) {
+        throw new Error(githubData.error || "Failed to fetch repository data.");
       }
 
-      setSuccessData(data);
+      // 2. Perform AI analysis
+      const aiRes = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(githubData),
+      });
+
+      const aiData = await aiRes.json();
+
+      if (!aiRes.ok || !aiData.success) {
+        throw new Error(aiData.error || "Failed to analyze repository.");
+      }
+
+      setAnalysisData(aiData.analysis);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "An unexpected error occurred.");
@@ -57,7 +71,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center min-h-screen bg-zinc-50 font-sans dark:bg-black p-4">
-      <main className="w-full max-w-xl flex-col items-center justify-center bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
+      <main className="w-full max-w-2xl flex-col items-center justify-center bg-white dark:bg-zinc-900 p-8 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800">
         <div className="flex flex-col items-center gap-6 text-center mb-8">
           <h1 className="text-3xl font-semibold tracking-tight text-black dark:text-zinc-50">
             RepoMap AI
@@ -82,21 +96,12 @@ export default function Home() {
             <p className="text-red-500 text-sm font-medium">{error}</p>
           )}
 
-          {successData && (
-            <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 rounded-md text-sm border border-zinc-200 dark:border-zinc-700">
-              <h2 className="font-bold text-lg mb-2 text-black dark:text-white">Debug Info</h2>
-              <ul className="space-y-1">
-                <li><span className="font-semibold">Repository:</span> {successData.repository.owner}/{successData.repository.repo}</li>
-                <li><span className="font-semibold">Description:</span> {successData.repository.description || 'N/A'}</li>
-                <li><span className="font-semibold">Stars:</span> {successData.repository.stars}</li>
-                <li><span className="font-semibold">Forks:</span> {successData.repository.forks}</li>
-                <li><span className="font-semibold">Languages:</span> {Object.keys(successData.repository.languages || {}).join(', ') || 'N/A'}</li>
-                <li><span className="font-semibold">Total files:</span> {successData.tree.length}</li>
-                <li>
-                  <span className="font-semibold">Top-level folders: </span> 
-                  {Array.from(new Set(successData.tree.map(n => n.path.split('/')[0]))).filter(p => !p.includes('.')).join(', ') || 'None'}
-                </li>
-              </ul>
+          {analysisData && (
+            <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 rounded-md text-sm border border-zinc-200 dark:border-zinc-700 overflow-x-auto max-h-[400px] overflow-y-auto">
+              <h2 className="font-bold text-lg mb-2 text-black dark:text-white">Raw Analysis Output (Debug)</h2>
+              <pre className="text-xs">
+                {JSON.stringify(analysisData, null, 2)}
+              </pre>
             </div>
           )}
 
