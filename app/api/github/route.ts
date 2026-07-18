@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { fetchAndNormalizeRepository } from '@/services/github';
 
 export async function POST(request: Request) {
   try {
@@ -12,15 +13,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // For now, simply return the parsed info successfully
+    const normalizedData = await fetchAndNormalizeRepository(owner, repo);
+
     return NextResponse.json({
       success: true,
-      owner,
-      repo
+      repository: normalizedData.repository,
+      tree: normalizedData.tree
     });
-  } catch {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { success: false, error: 'Invalid request body.' },
+      { success: false, error: 'An unexpected error occurred.' },
       { status: 400 }
     );
   }

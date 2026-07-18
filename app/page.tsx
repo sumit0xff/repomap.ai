@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { parseGithubUrl, GithubRepoInfo } from "@/lib/github-parser";
+import { parseGithubUrl } from "@/lib/github-parser";
+import { NormalizedGithubData } from "@/types/github";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successData, setSuccessData] = useState<GithubRepoInfo | null>(null);
+  const [successData, setSuccessData] = useState<NormalizedGithubData | null>(null);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) {
@@ -32,7 +33,7 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || "Failed to parse repository.");
+        throw new Error(data.error || "Failed to fetch repository data.");
       }
 
       setSuccessData(data);
@@ -82,10 +83,20 @@ export default function Home() {
           )}
 
           {successData && (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-md text-sm border border-green-200 dark:border-green-900/50">
-              <p>Successfully parsed!</p>
-              <p>Owner: {successData.owner}</p>
-              <p>Repo: {successData.repo}</p>
+            <div className="p-4 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-800 dark:text-zinc-200 rounded-md text-sm border border-zinc-200 dark:border-zinc-700">
+              <h2 className="font-bold text-lg mb-2 text-black dark:text-white">Debug Info</h2>
+              <ul className="space-y-1">
+                <li><span className="font-semibold">Repository:</span> {successData.repository.owner}/{successData.repository.repo}</li>
+                <li><span className="font-semibold">Description:</span> {successData.repository.description || 'N/A'}</li>
+                <li><span className="font-semibold">Stars:</span> {successData.repository.stars}</li>
+                <li><span className="font-semibold">Forks:</span> {successData.repository.forks}</li>
+                <li><span className="font-semibold">Languages:</span> {Object.keys(successData.repository.languages || {}).join(', ') || 'N/A'}</li>
+                <li><span className="font-semibold">Total files:</span> {successData.tree.length}</li>
+                <li>
+                  <span className="font-semibold">Top-level folders: </span> 
+                  {Array.from(new Set(successData.tree.map(n => n.path.split('/')[0]))).filter(p => !p.includes('.')).join(', ') || 'None'}
+                </li>
+              </ul>
             </div>
           )}
 
