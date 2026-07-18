@@ -28,6 +28,7 @@ import FileExplorer from "@/components/features/FileExplorer";
 import BeginnerGuide from "@/components/features/BeginnerGuide";
 import ReadmeSuggestions from "@/components/features/ReadmeSuggestions";
 import LoadingState from "@/components/ui/LoadingState";
+import LandingPage from "@/components/features/LandingPage";
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -241,111 +242,18 @@ ${ai.readmeSuggestions.map(s => `- [ ] ${s}`).join('\\n')}
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
         {!isAnalyzed && !loading && (
-          <div className="absolute inset-0 flex items-center justify-center p-6 z-10">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center w-full max-w-2xl"
-            >
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#4d4da8] to-[#6b6bc6] flex items-center justify-center shadow-[0_0_30px_rgba(77,77,168,0.2)] mb-8">
-                <Command size={28} className="text-white" />
-              </div>
-              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-white mb-4 text-center">
-                Understand any codebase.
-              </h1>
-              <p className="text-lg text-white/50 mb-10 text-center max-w-lg">
-                Paste a GitHub repository to instantly generate an AI-powered architecture explanation.
-              </p>
-
-              <form onSubmit={handleSubmit} className="w-full relative group">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="https://github.com/owner/repo"
-                  className="w-full h-16 pl-6 pr-32 rounded-2xl bg-[#111113] border border-white/[0.08] text-lg text-white outline-none focus:border-white/[0.2] transition-all placeholder:text-white/20 shadow-2xl"
-                  disabled={loading}
-                  autoFocus
-                />
-                <button
-                  type="submit"
-                  disabled={loading || !url}
-                  className="absolute right-2 top-2 bottom-2 px-6 rounded-xl bg-white text-black font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
-                  aria-label="Analyze repository"
-                >
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                  ) : (
-                    "Analyze"
-                  )}
-                </button>
-              </form>
-              
-              <div className="w-full mt-6 flex flex-col sm:flex-row items-start justify-between gap-6 text-sm">
-                {recentRepos.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-white/40 font-medium">Recent</span>
-                    <div className="flex flex-wrap gap-2">
-                      {recentRepos.map((r, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setUrl(r)}
-                          className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-white/70 hover:text-white transition-colors"
-                        >
-                          {r.replace("https://github.com/", "")}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex flex-col gap-2">
-                  <span className="text-white/40 font-medium">Try Examples</span>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { name: "React", url: "https://github.com/facebook/react" },
-                      { name: "Next.js", url: "https://github.com/vercel/next.js" },
-                      { name: "TypeScript", url: "https://github.com/microsoft/TypeScript" },
-                      { name: "Tailwind CSS", url: "https://github.com/tailwindlabs/tailwindcss" },
-                      { name: "OpenAI", url: "https://github.com/openai/openai-node" },
-                    ].map((ex, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setUrl(ex.url)}
-                        className="px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.06] text-[#4d4da8] hover:text-[#6b6bc6] transition-colors"
-                      >
-                        {ex.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="mt-8 w-full p-6 rounded-2xl bg-[#111113] border border-red-500/20 shadow-2xl flex flex-col items-center text-center gap-4 relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-red-500/5 mix-blend-screen" />
-                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-2 z-10">
-                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </div>
-                  <div className="z-10">
-                    <h3 className="text-lg font-medium text-white mb-2">{error.title}</h3>
-                    <p className="text-sm text-red-400/80 max-w-md">{error.description}</p>
-                  </div>
-                  <button 
-                    onClick={() => setError(null)}
-                    className="z-10 mt-2 px-5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-sm font-medium text-white transition-colors"
-                  >
-                    {error.action || "Dismiss"}
-                  </button>
-                </motion.div>
-              )}
-            </motion.div>
+          <div className="absolute inset-0 z-10">
+            <LandingPage
+              url={url}
+              setUrl={setUrl}
+              handleSubmit={handleSubmit}
+              loading={loading}
+              error={error}
+              setError={setError}
+              recentRepos={recentRepos}
+              inputRef={inputRef}
+              handleKeyDown={handleKeyDown}
+            />
           </div>
         )}
 
